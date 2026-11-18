@@ -24,7 +24,7 @@ export default function CrudPage({ title, endpoint, columns, fields, canWrite = 
   const [form, setForm] = useState({});
   const [options, setOptions] = useState({});
   const [saving, setSaving] = useState(false);
-  const single = title.replace(/s$/, "").toLowerCase();
+  const single = title.replace(/$/, "").toLowerCase();
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -80,23 +80,32 @@ export default function CrudPage({ title, endpoint, columns, fields, canWrite = 
     try { await api.delete(`${endpoint}/${row._id}`); toast.success("Deleted"); load(); }
     catch (e) { toast.error(errMsg(e)); }
   };
+  const baseCols = canWrite
+  ? [...columns, {
+      field: "actions", type: "actions", headerName: "", width: 90,
+      getActions: ({ row }) => [
+        <GridActionsCellItem key="e" icon={<EditIcon />} label="Edit" onClick={() => openForm(row)} />,
+        <GridActionsCellItem key="d" icon={<DeleteIcon />} label="Delete" onClick={() => remove(row)} />,
+      ],
+    }]
+  : columns;
 
-  const cols = canWrite
-    ? [...columns, {
-        field: "actions", type: "actions", headerName: "", width: 90,
-        getActions: ({ row }) => [
-          <GridActionsCellItem key="e" icon={<EditIcon />} label="Edit" onClick={() => openForm(row)} />,
-          <GridActionsCellItem key="d" icon={<DeleteIcon />} label="Delete" onClick={() => remove(row)} />,
-        ],
-      }]
-    : columns;
+const cols = baseCols.map((c) => ({ align: "left", headerAlign: "left", ...c }));
 
   return (
     <>
-      <Stack direction="row" className="mb-4 items-center justify-between">
-        <Typography variant="h5" className="font-semibold">{title}</Typography>
-        {canWrite && <Button variant="contained" startIcon={<AddIcon />} onClick={() => openForm(null)}>Add {single}</Button>}
-      </Stack>
+      <Stack
+  direction="row"
+  sx={{ mb: 2, alignItems: "center", justifyContent: "space-between", width: "100%" }}
+>
+  <Typography variant="h5" sx={{ fontWeight: 600 }}>{title}</Typography>
+
+  {canWrite && (
+    <Button variant="contained" startIcon={<AddIcon />} onClick={() => openForm(null)}>
+      Add {single}
+    </Button>
+  )}
+</Stack>
 
       <Paper variant="outlined" sx={{ height: 560 }}>
         <DataGrid rows={rows} columns={cols} loading={loading} getRowId={(r) => r._id}

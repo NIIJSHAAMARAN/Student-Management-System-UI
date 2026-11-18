@@ -32,3 +32,7 @@ export const toList = (res) => {
   }
   return [];
 };
+
+export const errMsg = (e) => e.response?.data?.message || e.message || "Something went wrong";
+
+export default api;

@@ -4,7 +4,7 @@ import api from "../api/client";
 const AuthContext = createContext(null);
 export const useAuth = () => useContext(AuthContext);
 
-export function AuthProvider({ children }) {
+export  function AuthProvider({ children }) {
   const [user, setUser] = useState(() => JSON.parse(localStorage.getItem("user") || "null"));
 
   const login = async (email, password) => {

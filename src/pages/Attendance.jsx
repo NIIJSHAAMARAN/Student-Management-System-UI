@@ -73,25 +73,36 @@ export default function Attendance() {
   const alreadyMarked = Object.keys(existing).length > 0;
 
   const submit = async () => {
-    if (!day) return toast.error("Choose a valid date");
-    const toCreate = [];
-    const toUpdate = [];
-    Object.entries(marks).forEach(([student, status]) => {
-      const rec = existing[student];
-      if (!rec) toCreate.push({ student, status });
-      else if (rec.status !== status) toUpdate.push({ id: rec._id, status });
-    });
-    if (!toCreate.length && !toUpdate.length) return toast("Nothing has changed");
+  if (!day) return toast.error("Choose a valid date");
+  const toCreate = [];
+  const toUpdate = [];
+  Object.entries(marks).forEach(([student, status]) => {
+    const rec = existing[student];
+    if (!rec) toCreate.push({ student, status });
+    else if (rec.status !== status) toUpdate.push({ id: rec._id, status });
+  });
+  if (!toCreate.length && !toUpdate.length) return toast("Nothing has changed");
 
-    setSaving(true);
-    try {
-      if (toCreate.length)
-        await api.post("/attendance/mark", { batch: batchId, date: day, records: toCreate });
-      await Promise.all(toUpdate.map((u) => api.put(`/attendance/${u.id}`, { status: u.status })));
-      toast.success("Attendance saved");
-      loadExisting();
-    } catch (e) { toast.error(errMsg(e)); }
-    finally { setSaving(false); }
+  setSaving(true);
+  try {
+    if (toCreate.length) {
+      const list = toCreate.map((r) => ({ student: r.student, studentId: r.student, status: r.status }));
+      const body = { batch: batchId, batchId, date: day, records: list, attendance: list };
+      console.log("MARK REQUEST →", JSON.stringify(body, null, 2));
+      try {
+        const res = await api.post("/attendance/mark", body);
+        console.log("MARK RESPONSE →", res.status, res.data);
+      } catch (e) {
+        console.log("MARK FAILED →", e.response?.status, e.response?.data);
+        throw e;
+      }
+    }
+    await Promise.all(toUpdate.map((u) => api.put(`/attendance/${u.id}`, { status: u.status })));
+    toast.success("Attendance saved");
+    loadExisting();
+  } catch (e) { toast.error(errMsg(e)); }
+  finally { setSaving(false); }
+
   };
 
   return (
